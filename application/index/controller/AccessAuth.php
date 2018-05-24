@@ -8,6 +8,7 @@ use think\exception\HttpResponseException;
 use think\Request;
 use think\View;
 use think\Controller;
+use \think\cache\driver\Redis;
 
 /**
  * 访问权限管理
@@ -16,8 +17,7 @@ use think\Controller;
  * @author Anyon <zoujingli@qq.com>
  * @date 2017/05/12 11:59
  */
-class AccessAuth extends Controller
-{
+class AccessAuth extends Controller {
 
     /**
      * 当前请求对象
@@ -29,34 +29,48 @@ class AccessAuth extends Controller
      * 行为入口
      * @param $params
      */
-    public function run(&$params)
-    {
-        $this->request = Request::instance();
+    public function run() {
+        $user['id']=1;
+        $user['name']='name';
+        session('user',$user);
+        //$this->request = $this->request;
         list($module, $controller, $action) = [$this->request->module(), $this->request->controller(), $this->request->action()];
-        //$node = strtolower("{$module}/{$controller}/{$action}");
+        //首先判定这个action是否需要授权
+        $node = strtolower($module . '/' . $controller . '/' . $action);
+        $redis=new Redis();
+        $nodeInfo = $redis->get($node);
+        if (empty($node)) {
+            //查询并将结果写入
+            $nodeInfo = Db::name('Auth')->where(array('module' => $module, 'controller' => $controller, 'action' => $action))->find();
+            if (empty($nodeInfo)) {
+                $this->response('抱歉，您没有访问该模块的权限！', 0);
+            } else {
+                $nodeInfo = json_encode($nodeInfo);
+                $redis->set($node, $nodeInfo, 600);
+            }
+        }
+        //根据nodeInfo来判定是否需要授权
+        $nodeInfo = json_decode($nodeInfo, true);
+        if ($nodeInfo['is_auth'] == -1) {
+            //不需要授权
+            return true;
+        }
         // 用户登录状态检查
-        if(!session('user')){
+        if (!session('user')) {
             throw new HttpResponseException(redirect('login/login'));
         }
         //存在用户登录信息，查询用户是否有权限
-        $info=
-        if (!empty($access['is_login']) && !session('user')) {
-            if ($this->request->isAjax()) {
-                $this->response('抱歉，您还没有登录获取访问权限！', 0, url('@admin/login'));
-            }
-            
+        $auth = $redis->getInstance('auth_' . session('user.id'));
+        if (empty($auth)) {
+            $auth = $this->getUserAuth(session('user.id'));
+            $auth= json_encode($auth);
+            $redis->set('auth_'. session('user.id'),$auth,86400);
         }
-        $info = Db::name('SystemNode')->where('node', $node)->find();
-        $access = [
-            'is_menu'  => intval(!empty($info['is_menu'])),
-            'is_auth'  => intval(!empty($info['is_auth'])),
-            'is_login' => empty($info['is_auth']) ? intval(!empty($info['is_login'])) : 1
-        ];
+        $auth= json_decode($auth,true);
+        if (in_array($nodeInfo['id'], $auth)) {
+            return true;
+        }
         
-        // 访问权限节点检查
-        if (!empty($access['is_auth']) && !auth($node)) {
-            $this->response('抱歉，您没有访问该模块的权限！', 0);
-        }
         // 权限正常, 默认赋值
         $view = View::instance(Config::get('template'), Config::get('view_replace_str'));
         $view->assign('classuri', strtolower("{$module}/{$controller}"));
@@ -70,10 +84,29 @@ class AccessAuth extends Controller
      * @param array $data 数据内容
      * @param int $wait
      */
-    protected function response($msg, $code = 0, $url = '', $data = [], $wait = 3)
-    {
+    protected function response($msg, $code = 0, $url = '', $data = [], $wait = 3) {
         $result = ['code' => $code, 'msg' => $msg, 'data' => $data, 'url' => $url, 'wait' => $wait];
         throw new HttpResponseException(json($result));
+    }
+
+    public function getUserAuth($userid = '1') {
+        if (!empty($userid)) {
+            $userInfo = Db::name('user')->where('id', $userid)->find();
+            //$groups= explode(',', $userInfo['group_id']);
+            $authGroup = Db::name('user_group')->where(array('id' => $userInfo['group_id']))->column('auth');
+            $auths = explode(',', $authGroup[0]);
+            $allAuth = array();
+            foreach ($auths as $value) {
+                //获取所有权限组的子权限集
+                $auth = Db::name('auth_group')->where(array('id' => $value))->column('auth_id');
+                $auth = explode(',', $auth[0]);
+                var_dump($auth);
+                $allAuth = array_merge($allAuth, $auth);
+            }
+            $allAuth = array_unique($allAuth);
+            var_dump($allAuth);
+        }
+        return $allAuth;
     }
 
 }
