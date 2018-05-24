@@ -60,7 +60,7 @@ class AccessAuth extends Controller {
             throw new HttpResponseException(redirect('login/login'));
         }
         //存在用户登录信息，查询用户是否有权限
-        $auth = $redis->getInstance('auth_' . session('user.id'));
+        $auth = $redis->get('auth_' . session('user.id'));
         if (empty($auth)) {
             $auth = $this->getUserAuth(session('user.id'));
             $auth= json_encode($auth);
