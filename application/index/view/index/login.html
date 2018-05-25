@@ -1,60 +1,10 @@
-<!DOCTYPE html>
-<!--
-To change this license header, choose License Headers in Project Properties.
-To change this template file, choose Tools | Templates
-and open the template in the editor.
--->
-<html>
-    <head>
-        <title>TODO supply a title</title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    </head>
-    <body>
-        <input id="name"  name="data[name]">
-        <input id="pass" name="data[pass]">
-        <a href="#" class="commit">提交</a>
-        <script src="http://apps.bdimg.com/libs/jquery/2.1.1/jquery.min.js"></script>
-        <script>
+{extend name='public/base' /}
+{block name="title"}12313{/block}
+{block name="content"}
 
-            $(".commit").click(function () {
-                $.ajax({
-                    type: "POST",
-                    url: "{:url('login')}",
-                    data: {
-                        merchantId: merchantid,
-                        
-                    },
-                    dataType: "json",
-                    async: true,
-                    success: function (data) {
-                        if (data.status == 1) {
-                            var msg = '订单创建成功！';
-                            $.each(data.data, function (i, v) {
-                                if (i == 'third_order_id') {
-                                    orderid = v;
-                                }
-                                if (i == 'td_code') {
-                                    qr_code = v;
-                                }
-                            });
-                            msg += '</br>订单号为：' + orderid;
-                            msg += '</br>支付码为：' + qr_code;
+<div class="layui-body">
+    <!-- 内容主体区域 -->
+    <div style="padding: 15px;">content</div>
+</div>
 
-                            //轮询调用支付查询接口
-                            get_res_flag = setInterval('query_result()', 2000);
-
-                        } else {
-                            var msg = '订单创建失败！';
-                            msg += '</br>失败原因：<span style="color:red">' + data.msg + '</span>';
-                        }
-                        $('.getcode_res').append(msg);
-                    },
-                });
-            });
-
-
-
-        </script>
-    </body>
-</html>
+{/block}
