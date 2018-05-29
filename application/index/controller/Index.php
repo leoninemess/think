@@ -17,5 +17,15 @@ class Index extends Controller {
     public function login() {
         return $this->fetch('login');
     }
+    public function show_layout(){
+        return $this->fetch('public/base');
+    }
+    
+    public function show_layout_new(){
+        return $this->fetch('public/base_new');
+    }
+    public function extend(){
+        return $this->fetch('extend');
+    }
 
 }
