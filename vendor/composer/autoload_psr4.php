@@ -8,4 +8,5 @@ $baseDir = dirname($vendorDir);
 return array(
     'think\\composer\\' => array($vendorDir . '/topthink/think-installer/src'),
     'app\\' => array($baseDir . '/application'),
+    'OSS\\' => array($vendorDir . '/aliyuncs/oss-sdk-php/src/OSS'),
 );
