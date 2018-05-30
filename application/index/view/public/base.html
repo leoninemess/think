@@ -13,10 +13,6 @@
   <div class="layui-header">
     <div class="layui-logo">leethink 后台布局</div>
     <!-- 头部区域（可配合layui已有的水平导航） -->
-    <ul class="layui-nav layui-layout-left">
-        {volist name="list" id="vo"}
-            <li class="layui-nav-item"><a href="">{$id.}</a></li>
-        {/volist}
       
       <li class="layui-nav-item"><a href="">商品管理</a></li>
       <li class="layui-nav-item"><a href="">用户</a></li>
@@ -89,5 +85,6 @@ layui.use('element', function(){
   
 });
 </script>
+{block name="script"}{/block}
 </body>
 </html>
